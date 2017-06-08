@@ -10,6 +10,7 @@ import random
 import numpy as np
 import time
 from sklearn.ensemble import RandomForestRegressor
+from joblib import Parallel, delayed
 
 from helper_loaders import read_mesh
 from helper_loaders import generate_graph
@@ -52,13 +53,21 @@ for i in range(model.GetNumberOfPoints()):
 
 # Make some patches at the landmarks, of a certain size
 landmarkPatches = []
-landmarkSize = 7
+landmarkSize = 4
 st = time.time()
+
+# Iterative way
 for i in landmarkIds:
 	landmarkPatches.append(create_patch(model, modelGraph, idArray, invIdArray, i, landmarkSize))
+
+# Parallel way
+# Parallel(n_jobs=2)(delayed(create_patch)(model, modelGraph, idArray, invIdArray, i, landmarkSize) for i in landmarkIds)
+
 t = time.time() - st
+
 print("Generated {} landmark patches of size {} in {} seconds.".format(len(landmarkIds), landmarkSize, t))
 print("Average patch generation time: {} seconds.".format(t/len(landmarkIds)))
+print(model.GetNumberOfPoints())
 
 # Paint the patches
 for patch in landmarkPatches:

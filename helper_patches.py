@@ -1,4 +1,5 @@
 import vtk
+import random
 
 """
 Given a model, associated graph, and a point ID, generate a list of IDs
@@ -30,3 +31,10 @@ def create_patch(model, modelGraph, idArray, invIdArray, ID, order):
 	neighbourhood = list(set(neighbourhood))
 
 	return neighbourhood
+
+def get_random_points(model, sampleRate):
+	noOfPoints = model.GetNumberOfPoints()
+	noOfSamples = int(noOfPoints * sampleRate)
+	sampleIDs = random.sample(range(int(noOfPoints*0.99)), noOfSamples)
+
+	return sampleIDs
