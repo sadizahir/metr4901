@@ -17,6 +17,7 @@ from helper_loaders import generate_graph
 from helper_loaders import load_landmarks
 from helper_loaders import get_landmark_ids
 from helper_patches import create_patch
+from helper_patches import create_patch_optimised
 from constants import LANDMARK_REGIONS
 
 # Set the mesh filename
@@ -52,34 +53,35 @@ for i in range(model.GetNumberOfPoints()):
 	scalars.SetValue(i, 1)
 
 # Make some patches at the landmarks, of a certain size
-landmarkPatches = []
-landmarkSize = 4
-st = time.time()
+for landmarkSize in range(21):
+	# landmarkSize = 16
+	landmarkPatches = []
+	st = time.time()
 
-# Iterative way
-for i in landmarkIds:
-	landmarkPatches.append(create_patch(model, modelGraph, idArray, invIdArray, i, landmarkSize))
+	# Iterative way
+	for i in landmarkIds:
+		landmarkPatches.append(create_patch_optimised(model, modelGraph, idArray, invIdArray, i, landmarkSize))
 
-# Parallel way
-# Parallel(n_jobs=2)(delayed(create_patch)(model, modelGraph, idArray, invIdArray, i, landmarkSize) for i in landmarkIds)
+	# Parallel way
+	# Parallel(n_jobs=2)(delayed(create_patch)(model, modelGraph, idArray, invIdArray, i, landmarkSize) for i in landmarkIds)
 
-t = time.time() - st
+	t = time.time() - st
 
-print("Generated {} landmark patches of size {} in {} seconds.".format(len(landmarkIds), landmarkSize, t))
-print("Average patch generation time: {} seconds.".format(t/len(landmarkIds)))
-print(model.GetNumberOfPoints())
+	print("Generated {} landmark patches of size {} in {} seconds.".format(len(landmarkIds), landmarkSize, t))
+	print("Average patch generation time: {} seconds.".format(t/len(landmarkIds)))
+	print(model.GetNumberOfPoints())
 
-# Paint the patches
-for patch in landmarkPatches:
-	for point in patch:
-		scalars.SetValue(point, 2)
+	# Paint the patches
+	for patch in landmarkPatches:
+		for point in patch:
+			scalars.SetValue(point, 2)
 
-# Apply scalars to model
-model.GetPointData().SetScalars(scalars)
+	# Apply scalars to model
+	model.GetPointData().SetScalars(scalars)
 
-# Output the model with scalars
-outputFilename = subBoneFilename.split(".")[0] + "_landmarks_Size{}".format(landmarkSize) + "." + subBoneFilename.split(".")[1]
-writer = vtk.vtkPolyDataWriter()
-writer.SetFileName(outputFilename)
-writer.SetInputData(model)
-writer.Write()
+	# Output the model with scalars
+	outputFilename = subBoneFilename.split(".")[0] + "_landmarks_dijkstra_Size{}".format(landmarkSize) + "." + subBoneFilename.split(".")[1]
+	writer = vtk.vtkPolyDataWriter()
+	writer.SetFileName(outputFilename)
+	writer.SetInputData(model)
+	writer.Write()

@@ -16,12 +16,12 @@ from helper_loaders import get_landmark_ids
 from constants import LANDMARK_REGIONS
 
 # Set the mesh filename
-meshFilename = "bones/Asymknee13_boneSurface.vtk"
-landmarksFilename = "bones/Asymknee13.csv"
+meshFilename = "bones/Asymknee22_boneSurface.vtk"
+landmarksFilename = "bones/Asymknee22.csv"
 
 # Select sub-bone of interest
 subBones = ["Patella", "Tibia", "Femur", ""]
-subBone = subBones[1]
+subBone = subBones[2]
 
 # Check to see if it exists
 subBoneFilename = meshFilename.split(".")[0] + subBone + "." + meshFilename.split(".")[1]

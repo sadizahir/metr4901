@@ -20,8 +20,9 @@ from helper_patches import get_random_points
 from helper_features import get_features
 from constants import LANDMARK_REGIONS
 
-SAMPLE_RATE = 0.2
-ORDER = 5
+SAMPLE_RATE = 0.20
+ORDER = 7
+ALL_NORMS = True
 
 # Set the mesh filename
 meshFilename = "Asymknee13_boneSurface.vtk"
@@ -76,16 +77,19 @@ for i, ID in enumerate(landmarkIds):
 		if j in progressPoints: # print out some progress
 			print("About {} percent of {} sample points processed.".format((progressPoints.index(j)+1)*10, len(sampleIds)))
 		samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
-		sampleFeatures = get_features(model, samplePatch)
+		sampleFeatures = get_features(model, samplePatch, ALL_NORMS)
 		sampleLabel = mapScalars.GetValue(sID)
+		if ALL_NORMS:
+			sampleFeatures = sampleFeatures.flatten()
 		features.append(sampleFeatures)
 		labels.append(sampleLabel)
 
 		if j in progressPoints:
 			print(os.path.join(mapLocation, mapFilename))
 			print("Got feature {}, labelled {} for this".format(sampleFeatures, sampleLabel))
+			print(sampleFeatures.shape)
 
-	features = np.array(features)
+	features = np.array(features)	
 	print(features.shape)
 
 	# Create the estimator and fit it to the vectors
@@ -98,7 +102,10 @@ for i, ID in enumerate(landmarkIds):
 	estimatorString = "RFR"
 	orderString = "Order" + str(ORDER)
 	sampleString = "SampleRate" + str(int(SAMPLE_RATE * 100))
-	featureString = "Features-AvgNorms"
+	if ALL_NORMS == False:
+		featureString = "Features-AvgNorms"
+	else:
+		featureString = "Features-AllNorms"
 
 	estimatorFilename = meshBaseString + "_" + landmarkString + "_" + estimatorString + "_" + orderString + "_" + sampleString + "_" + featureString + ".pkl"
 	joblib.dump(estimator, os.path.join(estimatorLocation, estimatorFilename))

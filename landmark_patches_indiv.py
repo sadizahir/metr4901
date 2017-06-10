@@ -1,6 +1,6 @@
 """
-Paints (Dijkstra) distance heatmaps to every landmark on a mesh and saves
-each one.
+Paints landmarks onto a mesh, but larger than a single point.
+Sample code to show how to use the "create_patch" method.
 """
 
 from __future__ import print_function
@@ -43,27 +43,50 @@ for i, ID in enumerate(allLandmarkIds):
 	if i in LANDMARK_REGIONS[subBone]:
 		landmarkIds.append(ID)
 
-# Go through all landmarks and make Dijkstra heatmaps for them
+# These scalars may be set to many things, just initialising here
 scalars = vtk.vtkDoubleArray()
 scalars.SetNumberOfValues(model.GetNumberOfPoints())
-writer = vtk.vtkPolyDataWriter()
 
-for i, ID in enumerate(landmarkIds):
-	actualLandmarkNo = LANDMARK_REGIONS[subBone][i]
+# For example, set all scalars to 1
+for i in range(model.GetNumberOfPoints()):
+	scalars.SetValue(i, 1)
 
-	# Perform the dijkstra algorithm
-	dijkstra = vtk.vtkDijkstraGraphGeodesicPath()
-	dijkstra.SetInputData(model)
-	dijkstra.SetStartVertex(ID)
-	dijkstra.SetEndVertex(0) # just a random vertex so that it will compute all the paths
-	dijkstra.Update()
-	dijkstra.GetCumulativeWeights(scalars)
+# Make some patches at the landmarks, of a certain size
+landmarkPatches = []
+landmarkSize = 0
+st = time.time()
+
+# Iterative way
+for i in landmarkIds:
+	landmarkPatches.append(create_patch(model, modelGraph, idArray, invIdArray, i, landmarkSize))
+
+t = time.time() - st
+
+print("Generated {} landmark patches of size {} in {} seconds.".format(len(landmarkIds), landmarkSize, t))
+print("Average patch generation time: {} seconds.".format(t/len(landmarkIds)))
+print(model.GetNumberOfPoints())
+
+# Paint the patches
+for i, patch in enumerate(landmarkPatches):
+	for point in patch:
+		scalars.SetValue(point, 2)
 
 	# Apply scalars to model
 	model.GetPointData().SetScalars(scalars)
 
 	# Output the model with scalars
-	outputFilename = subBoneFilename.split(".")[0] + "_heatmap_landmark{}".format(actualLandmarkNo) + "." + subBoneFilename.split(".")[1]
+	if landmarkSize == 0:
+		landmarkSizeName = ""
+	else:
+		landmarkSizeName = "_Size{}".format(landmarkSize)
+	outputFilename = subBoneFilename.split(".")[0] + "_point_landmark{}{}".format(i, landmarkSizeName) + "." + subBoneFilename.split(".")[1]
+	writer = vtk.vtkPolyDataWriter()
 	writer.SetFileName(outputFilename)
 	writer.SetInputData(model)
 	writer.Write()
+
+	scalars = vtk.vtkDoubleArray()
+	scalars.SetNumberOfValues(model.GetNumberOfPoints())
+
+	for i in range(model.GetNumberOfPoints()):
+		scalars.SetValue(i, 1)

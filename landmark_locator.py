@@ -14,8 +14,8 @@ from helper_loaders import load_landmarks
 from helper_loaders import get_landmark_ids
 
 # Set the mesh filename
-meshFilename = "bones/Asymknee22_boneSurfaceRegions.vtk"
-landmarksFilename = "bones/Asymknee22.csv"
+meshFilename = "bones/Asymknee11_boneSurfaceRegions.vtk"
+landmarksFilename = "bones/Asymknee11.csv"
 
 # Check to see if it exists
 open(meshFilename, 'r')

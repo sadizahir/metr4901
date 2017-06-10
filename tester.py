@@ -16,25 +16,32 @@ from helper_loaders import generate_graph
 from helper_loaders import load_landmarks
 from helper_loaders import get_landmark_ids
 from helper_patches import create_patch
+from helper_patches import create_patch_optimised
 from helper_patches import get_random_points
 from helper_features import get_features
 from constants import LANDMARK_REGIONS
 
 SAMPLE_RATE = 0.2
-ORDER = 5
+ORDER = 7
+PATCH_SIZE = 11
+ALL_NORMS = False
 
 # Set the mesh filename
-meshFilename = "Asymknee22_boneSurface.vtk"
+meshFilename = "Asymknee13_boneSurface.vtk"
 landmarksFilename = "Asymknee13.csv"
 meshLocation = "bones"
 landmarksFileLocation = meshLocation
-mapLocation = "bones_markedLandmarksHeatmapTruthIndiv"
 guessLocation = "bones_markedLandmarksHeatmapGuessIndiv"
+guessPointLocation = "bones_markedLandmarksPointsGuessIndiv"
 estimatorLocation = "estimators"
 
 # Select sub-bone of interest
 subBones = ["Patella", "Tibia", "Femur", ""]
 subBone = subBones[1]
+
+# Guessed landmark coords
+guessed_coords = []
+
 
 writer = vtk.vtkPolyDataWriter()
 
@@ -46,7 +53,10 @@ for actualLandmarkNo in landmarkNos:
 	estimatorString = "RFR"
 	orderString = "Order" + str(ORDER)
 	sampleString = "SampleRate" + str(int(SAMPLE_RATE * 100))
-	featureString = "Features-AvgNorms"
+	if not ALL_NORMS:
+		featureString = "Features-AvgNorms"
+	else:
+		featureString = "Features-AllNorms"
 
 	estimatorFilename = meshBaseString + "_" + landmarkString + "_" + estimatorString + "_" + orderString + "_" + sampleString + "_" + featureString + ".pkl"
 	estimator = joblib.load(os.path.join(estimatorLocation, estimatorFilename))
@@ -76,8 +86,9 @@ for actualLandmarkNo in landmarkNos:
 	for j, sID in enumerate(sampleIds):
 		if j in progressPoints: # print out some progress
 			print("About {} percent of {} sample points processed.".format((progressPoints.index(j)+1)*10, len(sampleIds)))
-		samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
-		sampleFeatures = get_features(model, samplePatch)
+		# samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
+		samplePatch = create_patch_optimised(model, modelGraph, idArray, invIdArray, sID, PATCH_SIZE)
+		sampleFeatures = get_features(model, samplePatch, ALL_NORMS)
 
 		# generate a label using the estimator
 		sampleLabel = estimator.predict(np.array(sampleFeatures).reshape(1, -1))
@@ -97,7 +108,7 @@ for actualLandmarkNo in landmarkNos:
 	# Get rid of outliers if they exist, and apply to actual scalar field
 	for i, averageCandidate in enumerate(scalarAverageCandidates):
 		if averageCandidate == -1:
-			averageCandidate = max(scalarAverageCandidates)
+			scalarAverageCandidates[i] = max(scalarAverageCandidates)
 		scalars.SetValue(i, averageCandidate)
 
 	# Output the estimated heatmap
@@ -107,3 +118,19 @@ for actualLandmarkNo in landmarkNos:
 	writer.SetInputData(model)
 	writer.Write()
 
+	# Output the estimated point!
+	scalars = vtk.vtkDoubleArray()
+	scalars.SetNumberOfValues(model.GetNumberOfPoints())
+
+	for i in range(model.GetNumberOfPoints()):
+		scalars.SetValue(i, 1)
+
+	mostLikelyPointId = scalarAverageCandidates.index(min(scalarAverageCandidates))
+	print("The minimum value is {} at point {}".format(min(scalarAverageCandidates), mostLikelyPointId))
+	scalars.SetValue(mostLikelyPointId, 2)
+
+	model.GetPointData().SetScalars(scalars)
+	outputFilename = subBoneFilename.split(".")[0] + "_point_landmark{}_guessedBy{}".format(actualLandmarkNo, estimatorFilename.split(".")[0]) + "." + subBoneFilename.split(".")[1]
+	writer.SetFileName(os.path.join(guessPointLocation, outputFilename))
+	writer.SetInputData(model)
+	writer.Write()

@@ -32,6 +32,25 @@ def create_patch(model, modelGraph, idArray, invIdArray, ID, order):
 
 	return neighbourhood
 
+def create_patch_optimised(model, modelGraph, idArray, invIdArray, ID, size):
+	neighbourhood = []
+
+	candidates = vtk.vtkDoubleArray()
+	candidates.SetNumberOfValues(model.GetNumberOfPoints())
+	dijkstra = vtk.vtkDijkstraGraphGeodesicPath()
+	dijkstra.SetInputData(model)
+	dijkstra.SetStartVertex(ID)
+	dijkstra.SetEndVertex(0) # just a random vertex so that it will compute all the paths
+	dijkstra.Update()
+	dijkstra.GetCumulativeWeights(candidates)
+
+	for i in range(model.GetNumberOfPoints()):
+		weight = candidates.GetValue(i)
+		if weight <= size:
+			neighbourhood.append(i)
+
+	return neighbourhood
+
 def get_random_points(model, sampleRate):
 	noOfPoints = model.GetNumberOfPoints()
 	noOfSamples = int(noOfPoints * sampleRate)
