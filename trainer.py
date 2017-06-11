@@ -16,13 +16,16 @@ from helper_loaders import generate_graph
 from helper_loaders import load_landmarks
 from helper_loaders import get_landmark_ids
 from helper_patches import create_patch
+from helper_patches import create_patch_optimised
 from helper_patches import get_random_points
 from helper_features import get_features
 from constants import LANDMARK_REGIONS
 
-SAMPLE_RATE = 0.20
+SAMPLE_RATE = 0.01
 ORDER = 7
-ALL_NORMS = True
+PATCH_SIZE = 14
+PATCH_METHOD = "size" # can be "order", "size" or "legacy"
+ALL_NORMS = False
 
 # Set the mesh filename
 meshFilename = "Asymknee13_boneSurface.vtk"
@@ -56,7 +59,11 @@ for i, ID in enumerate(allLandmarkIds):
 for i, ID in enumerate(landmarkIds):
 	actualLandmarkNo = LANDMARK_REGIONS[subBone][i]
 	print("Creating estimator for landmark {} on file {}".format(actualLandmarkNo, subBoneFilename))
-	print("Sample Rate: {}, Patch Size: {}".format(SAMPLE_RATE, ORDER))
+	if PATCH_METHOD == "order":
+		patch_print = "Patch Order: {}".format(ORDER)
+	elif PATCH_METHOD == "size":
+		patch_print = "Patch Size: {}".format(PATCH_SIZE)
+	print("Sample Rate: {}, {}".format(SAMPLE_RATE, patch_print))
 
 	# Load the meshes with the distance information on them
 	# This will be used to generate labels for the patches
@@ -76,7 +83,11 @@ for i, ID in enumerate(landmarkIds):
 	for j, sID in enumerate(sampleIds):
 		if j in progressPoints: # print out some progress
 			print("About {} percent of {} sample points processed.".format((progressPoints.index(j)+1)*10, len(sampleIds)))
-		samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
+		if PATCH_METHOD == "order":
+			samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
+		elif PATCH_METHOD == "size":
+			samplePatch = create_patch_optimised(model, modelGraph, idArray, invIdArray, sID, PATCH_SIZE)
+
 		sampleFeatures = get_features(model, samplePatch, ALL_NORMS)
 		sampleLabel = mapScalars.GetValue(sID)
 		if ALL_NORMS:
@@ -87,7 +98,8 @@ for i, ID in enumerate(landmarkIds):
 		if j in progressPoints:
 			print(os.path.join(mapLocation, mapFilename))
 			print("Got feature {}, labelled {} for this".format(sampleFeatures, sampleLabel))
-			print(sampleFeatures.shape)
+			if ALL_NORMS:
+				print(sampleFeatures.shape)
 
 	features = np.array(features)	
 	print(features.shape)
@@ -100,7 +112,10 @@ for i, ID in enumerate(landmarkIds):
 	meshBaseString = landmarksFilename.split(".")[0]
 	landmarkString = "Landmark" + str(actualLandmarkNo)
 	estimatorString = "RFR"
-	orderString = "Order" + str(ORDER)
+	if PATCH_METHOD == "order":
+		orderString = "Order" + str(ORDER)
+	elif PATCH_METHOD == "size":
+		orderString = "Size" + str(PATCH_SIZE)
 	sampleString = "SampleRate" + str(int(SAMPLE_RATE * 100))
 	if ALL_NORMS == False:
 		featureString = "Features-AvgNorms"

@@ -21,14 +21,15 @@ from helper_patches import get_random_points
 from helper_features import get_features
 from constants import LANDMARK_REGIONS
 
-SAMPLE_RATE = 0.2
+SAMPLE_RATE = 0.1
 ORDER = 7
-PATCH_SIZE = 11
+PATCH_SIZE = 14
+PATCH_METHOD = "size" # can be "order", "size" or "legacy"
 ALL_NORMS = False
 
 # Set the mesh filename
-meshFilename = "Asymknee13_boneSurface.vtk"
-landmarksFilename = "Asymknee13.csv"
+meshFilename = "Asymknee22_boneSurface.vtk" # used to pick test mesh
+landmarksFilename = "Asymknee13.csv" # used to pick estimator
 meshLocation = "bones"
 landmarksFileLocation = meshLocation
 guessLocation = "bones_markedLandmarksHeatmapGuessIndiv"
@@ -51,7 +52,10 @@ for actualLandmarkNo in landmarkNos:
 	meshBaseString = landmarksFilename.split(".")[0]
 	landmarkString = "Landmark" + str(actualLandmarkNo)
 	estimatorString = "RFR"
-	orderString = "Order" + str(ORDER)
+	if PATCH_METHOD == "order" or PATCH_METHOD == "legacy":
+		orderString = "Order" + str(ORDER)
+	elif PATCH_METHOD == "size":
+		orderString = "Size" + str(PATCH_SIZE)
 	sampleString = "SampleRate" + str(int(SAMPLE_RATE * 100))
 	if not ALL_NORMS:
 		featureString = "Features-AvgNorms"
@@ -86,8 +90,10 @@ for actualLandmarkNo in landmarkNos:
 	for j, sID in enumerate(sampleIds):
 		if j in progressPoints: # print out some progress
 			print("About {} percent of {} sample points processed.".format((progressPoints.index(j)+1)*10, len(sampleIds)))
-		# samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
-		samplePatch = create_patch_optimised(model, modelGraph, idArray, invIdArray, sID, PATCH_SIZE)
+		if PATCH_METHOD == "order":
+			samplePatch = create_patch(model, modelGraph, idArray, invIdArray, sID, ORDER)
+		elif PATCH_METHOD == "size" or PATCH_METHOD == "legacy":
+			samplePatch = create_patch_optimised(model, modelGraph, idArray, invIdArray, sID, PATCH_SIZE)
 		sampleFeatures = get_features(model, samplePatch, ALL_NORMS)
 
 		# generate a label using the estimator

@@ -16,14 +16,16 @@ from helper_patches import create_patch
 from constants import LANDMARK_REGIONS
 
 ORDER = 7
-SAMPLE_RATE = 0.2
+SAMPLE_RATE = 0.1
+PATCH_SIZE = 14
+PATCH_METHOD = "size" # can be "order", "size" or "legacy"
 ALL_NORMS = False
 
 # "Truth" heatmap details
 mapLocation = "bones_markedLandmarksPointsTruthIndiv"
 guessLocation = "bones_markedLandmarksPointsGuessIndiv"
 
-meshFilename = "Asymknee13_boneSurface.vtk"
+meshFilename = "Asymknee22_boneSurface.vtk"
 landmarksFilename = "Asymknee13.csv"
 
 # Select sub-bone of interest
@@ -43,7 +45,12 @@ for actualLandmarkNo in landmarkNos:
 	else:
 		featString = "Features-AllNorms"
 
-	guessFilename = mapFilename.split(".")[0] + "_guessedBy{}_Landmark{}_RFR_Order{}_SampleRate{}_{}".format(landmarksFilename.split(".")[0], actualLandmarkNo, ORDER, int(SAMPLE_RATE*100), featString) + "." + mapFilename.split(".")[1]
+	if PATCH_METHOD == "order":
+		orderString = "Order{}".format(ORDER)
+	elif PATCH_METHOD == "size":
+		orderString = "Size{}".format(PATCH_SIZE)
+
+	guessFilename = mapFilename.split(".")[0] + "_guessedBy{}_Landmark{}_RFR_{}_SampleRate{}_{}".format(landmarksFilename.split(".")[0], actualLandmarkNo, orderString, int(SAMPLE_RATE*100), featString) + "." + mapFilename.split(".")[1]
 	open(os.path.join(guessLocation, guessFilename), 'r') # check to see if it exists
 
 	mapModel = read_mesh(os.path.join(mapLocation, mapFilename))

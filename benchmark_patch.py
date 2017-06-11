@@ -35,7 +35,7 @@ open(subBoneFilename, 'r')
 model = read_mesh(subBoneFilename)
 modelGraph, idArray, invIdArray = generate_graph(model)
 
-for size in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+for size in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]:
 	i = 1000
 	st = time.time()
 	patch = create_patch_optimised(model, modelGraph, idArray, invIdArray, i, size)

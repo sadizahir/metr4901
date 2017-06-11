@@ -54,6 +54,6 @@ def create_patch_optimised(model, modelGraph, idArray, invIdArray, ID, size):
 def get_random_points(model, sampleRate):
 	noOfPoints = model.GetNumberOfPoints()
 	noOfSamples = int(noOfPoints * sampleRate)
-	sampleIDs = random.sample(range(int(noOfPoints*0.99)), noOfSamples)
+	sampleIDs = random.sample(range(int(noOfPoints*0.99)), noOfSamples) # for some reason, VTK will crash if you try to sample the last dozen or so points
 
 	return sampleIDs
