@@ -21,11 +21,13 @@ from helper_patches import get_random_points
 from helper_features import get_features
 from constants import LANDMARK_REGIONS
 
-SAMPLE_RATE = 0.01
+SAMPLE_RATE = 0.2
 ORDER = 7
 PATCH_SIZE = 14
 PATCH_METHOD = "size" # can be "order", "size" or "legacy"
-ALL_NORMS = False
+FEATURES = "Norms" # Norms or Coords
+PCA_COMPONENTS = None # set to None for Averaging method, set to integer to use PCA
+NO_TREES = 100 # set to None for default (10)
 
 # Set the mesh filename
 meshFilename = "Asymknee13_boneSurface.vtk"
@@ -88,9 +90,9 @@ for i, ID in enumerate(landmarkIds):
 		elif PATCH_METHOD == "size":
 			samplePatch = create_patch_optimised(model, modelGraph, idArray, invIdArray, sID, PATCH_SIZE)
 
-		sampleFeatures = get_features(model, samplePatch, ALL_NORMS)
+		sampleFeatures = get_features(model, samplePatch, FEATURES, PCA_COMPONENTS, sID)
 		sampleLabel = mapScalars.GetValue(sID)
-		if ALL_NORMS:
+		if PCA_COMPONENTS != None:
 			sampleFeatures = sampleFeatures.flatten()
 		features.append(sampleFeatures)
 		labels.append(sampleLabel)
@@ -98,29 +100,32 @@ for i, ID in enumerate(landmarkIds):
 		if j in progressPoints:
 			print(os.path.join(mapLocation, mapFilename))
 			print("Got feature {}, labelled {} for this".format(sampleFeatures, sampleLabel))
-			if ALL_NORMS:
+			if PCA_COMPONENTS != None:
 				print(sampleFeatures.shape)
 
 	features = np.array(features)	
 	print(features.shape)
 
 	# Create the estimator and fit it to the vectors
-	estimator = RandomForestRegressor()
+	if NO_TREES != None:
+		estimator = RandomForestRegressor(n_estimators=NO_TREES)
+	else:
+		estimator = RandomForestRegressor()
 	estimator.fit(features, labels)
 
 	# Export the estimator
 	meshBaseString = landmarksFilename.split(".")[0]
 	landmarkString = "Landmark" + str(actualLandmarkNo)
-	estimatorString = "RFR"
+	estimatorString = "RFR" + str(NO_TREES)
 	if PATCH_METHOD == "order":
 		orderString = "Order" + str(ORDER)
 	elif PATCH_METHOD == "size":
 		orderString = "Size" + str(PATCH_SIZE)
 	sampleString = "SampleRate" + str(int(SAMPLE_RATE * 100))
-	if ALL_NORMS == False:
-		featureString = "Features-AvgNorms"
+	if PCA_COMPONENTS == None:
+		featureString = "Features-Avg{}".format(FEATURES)
 	else:
-		featureString = "Features-AllNorms"
+		featureString = "Features-All{}PCA{}".format(FEATURES, PCA_COMPONENTS)
 
 	estimatorFilename = meshBaseString + "_" + landmarkString + "_" + estimatorString + "_" + orderString + "_" + sampleString + "_" + featureString + ".pkl"
 	joblib.dump(estimator, os.path.join(estimatorLocation, estimatorFilename))

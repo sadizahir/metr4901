@@ -25,7 +25,7 @@ landmarksFilename = "bones/Asymknee11.csv"
 
 # Select sub-bone of interest
 subBones = ["Patella", "Tibia", "Femur", ""]
-subBone = subBones[1]
+subBone = subBones[2]
 
 # Check to see if it exists
 subBoneFilename = meshFilename.split(".")[0] + subBone + "." + meshFilename.split(".")[1]
@@ -68,6 +68,8 @@ print(model.GetNumberOfPoints())
 
 # Paint the patches
 for i, patch in enumerate(landmarkPatches):
+	actualLandmarkNo = LANDMARK_REGIONS[subBone][i]
+
 	for point in patch:
 		scalars.SetValue(point, 2)
 
@@ -79,7 +81,7 @@ for i, patch in enumerate(landmarkPatches):
 		landmarkSizeName = ""
 	else:
 		landmarkSizeName = "_Size{}".format(landmarkSize)
-	outputFilename = subBoneFilename.split(".")[0] + "_point_landmark{}{}".format(i, landmarkSizeName) + "." + subBoneFilename.split(".")[1]
+	outputFilename = subBoneFilename.split(".")[0] + "_point_landmark{}{}".format(actualLandmarkNo, landmarkSizeName) + "." + subBoneFilename.split(".")[1]
 	writer = vtk.vtkPolyDataWriter()
 	writer.SetFileName(outputFilename)
 	writer.SetInputData(model)

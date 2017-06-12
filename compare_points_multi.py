@@ -21,14 +21,15 @@ PATCH_SIZE = 14
 PATCH_METHOD = "size" # can be "order", "size" or "legacy"
 FEATURES = "Norms" # Norms or Coords
 PCA_COMPONENTS = None # set to None for Averaging method, set to integer to use PCA
-NO_TREES = 100 # set to None for default (10)
+NO_TREES = 10 # set to None for default (10)
 
 # "Truth" heatmap details
 mapLocation = "bones_markedLandmarksPointsTruthIndiv"
 guessLocation = "bones_markedLandmarksPointsGuessIndiv"
 
+basePrefix = "Asymknee"
 meshFilename = "Asymknee22_boneSurface.vtk"
-landmarksFilename = "Asymknee13.csv"
+landmarksFilenames = ["Asymknee11.csv", "Asymknee13.csv"]
 
 estimatorString = "RFR" + str(NO_TREES)
 
@@ -40,6 +41,11 @@ pairwisePoints = [("Landmark No.", "Euclidean Distance", "Geodesic Distance")]
 
 landmarkNos = LANDMARK_REGIONS[subBone]
 for actualLandmarkNo in landmarkNos:
+	meshBaseString = ""
+	for landmarksFilename in landmarksFilenames:
+		meshBaseString += landmarksFilename.split(".")[0][len(basePrefix):] + ","
+	meshBaseString = meshBaseString[:-1]
+
 	subBoneFilename = meshFilename.split(".")[0] + subBone + "." + meshFilename.split(".")[1]
 	mapFilename = subBoneFilename.split(".")[0] + "_point_landmark{}".format(actualLandmarkNo) + "." + subBoneFilename.split(".")[1]
 	open(os.path.join(mapLocation, mapFilename), 'r') # check to see if it exists
@@ -54,7 +60,7 @@ for actualLandmarkNo in landmarkNos:
 	elif PATCH_METHOD == "size":
 		orderString = "Size{}".format(PATCH_SIZE)
 
-	guessFilename = mapFilename.split(".")[0] + "_guessedBy{}_Landmark{}_{}_{}_SampleRate{}_{}".format(landmarksFilename.split(".")[0], actualLandmarkNo, estimatorString, orderString, int(SAMPLE_RATE*100), featureString) + "." + mapFilename.split(".")[1]
+	guessFilename = mapFilename.split(".")[0] + "_guessedBy{}_Landmark{}_{}_{}_SampleRate{}_{}".format(meshBaseString, actualLandmarkNo, estimatorString, orderString, int(SAMPLE_RATE*100), featureString) + "." + mapFilename.split(".")[1]
 	open(os.path.join(guessLocation, guessFilename), 'r') # check to see if it exists
 
 	mapModel = read_mesh(os.path.join(mapLocation, mapFilename))

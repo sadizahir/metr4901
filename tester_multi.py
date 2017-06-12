@@ -27,11 +27,12 @@ PATCH_SIZE = 14
 PATCH_METHOD = "size" # can be "order", "size" or "legacy"
 FEATURES = "Norms" # Norms or Coords
 PCA_COMPONENTS = None # set to None for Averaging method, set to integer to use PCA
-NO_TREES = 1 # set to None for default (10)
+NO_TREES = 10 # set to None for default (10)
 
 # Set the mesh filename
+basePrefix = "Asymknee"
 meshFilename = "Asymknee22_boneSurface.vtk" # used to pick test mesh
-landmarksFilename = "Asymknee13.csv" # used to pick estimator
+landmarksFilenames = ["Asymknee11.csv", "Asymknee13.csv"] # used to pick estimator
 meshLocation = "bones"
 landmarksFileLocation = meshLocation
 guessLocation = "bones_markedLandmarksHeatmapGuessIndiv"
@@ -51,7 +52,11 @@ writer = vtk.vtkPolyDataWriter()
 landmarkNos = LANDMARK_REGIONS[subBone]
 for actualLandmarkNo in landmarkNos:
 	# Load the estimator
-	meshBaseString = landmarksFilename.split(".")[0]
+	meshBaseString = ""
+	for landmarksFilename in landmarksFilenames:
+		meshBaseString += landmarksFilename.split(".")[0][len(basePrefix):] + ","
+	meshBaseString = meshBaseString[:-1]
+
 	landmarkString = "Landmark" + str(actualLandmarkNo)
 	estimatorString = "RFR" + str(NO_TREES)
 	if PATCH_METHOD == "order" or PATCH_METHOD == "legacy":

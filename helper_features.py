@@ -4,20 +4,33 @@ from sklearn.decomposition import PCA
 """
 Generate a feature array from a patch, where a patch is a list of point IDs.
 """
-def get_features(model, patch, allNorms=False):
-	pca_components = 3
-	x_norms = []
-	y_norms = []
-	z_norms = []
+def get_features(model, patch, features, pca_components, ID):
+	if features == "Norms":
+		x_norms = []
+		y_norms = []
+		z_norms = []
 
-	norms = model.GetPointData().GetNormals()
+		norms = model.GetPointData().GetNormals()
 
-	for ID in patch:
-		x_norms.append(norms.GetValue(ID*3))
-		y_norms.append(norms.GetValue(ID*3+1))
-		z_norms.append(norms.GetValue(ID*3+2))
+		for nID in patch:
+			x_norms.append(norms.GetValue(nID*3))
+			y_norms.append(norms.GetValue(nID*3+1))
+			z_norms.append(norms.GetValue(nID*3+2))
 
-	if allNorms == False:
+	elif features == "Coords":
+		x_norms = []
+		y_norms = []
+		z_norms = []
+
+		centreX, centreY, centreZ = model.GetPoint(ID)
+
+		for nID in patch:
+			IDx, IDy, IDz = model.GetPoint(nID)
+			x_norms.append(IDx - centreX)
+			y_norms.append(IDy - centreY)
+			z_norms.append(IDz - centreZ)
+
+	if pca_components == None:
 		avg_x_norm = np.mean(x_norms)
 		avg_y_norm = np.mean(y_norms)
 		avg_z_norm = np.mean(z_norms)
